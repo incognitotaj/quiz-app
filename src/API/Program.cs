@@ -33,16 +33,16 @@ builder.Services.AddSwaggerGen(options =>
         Version = "v1",
         Title = "Quiz API",
         Description = ".NET Core Web API for managing quizes. The repository contains the implementation using Clean Code Architecture guidelines with out CQRS.",
-        TermsOfService = new Uri("https://github.com/incognitotaj"),
+        TermsOfService = new Uri("https://github.com/incognitotaj/quiz-app"),
         Contact = new OpenApiContact
         {
             Name = "Contact",
-            Url = new Uri("https://github.com/incognitotaj")
+            Url = new Uri("https://github.com/incognitotaj/quiz-app")
         },
         License = new OpenApiLicense
         {
             Name = "License",
-            Url = new Uri("https://github.com/incognitotaj")
+            Url = new Uri("https://github.com/incognitotaj/quiz-app")
         }
     });
 
