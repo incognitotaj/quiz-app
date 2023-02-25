@@ -95,8 +95,8 @@ catch (Exception ex)
 
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
+//if (app.Environment.IsDevelopment())
+//{
     app.UseSwagger();
     app.UseSwaggerUI(options =>
     {
@@ -104,7 +104,7 @@ if (app.Environment.IsDevelopment())
         options.RoutePrefix = string.Empty;
         options.DocExpansion(DocExpansion.None);
     });
-}
+//}
 
 app.UseHttpsRedirection();
 

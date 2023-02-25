@@ -52,8 +52,8 @@ namespace API.Controllers
                 return NotFound($"Question with {questionId} no more exists");
             }
 
-            var result = await _questionRepository.GetByQuizIdAsync(quizId);
-            return Ok(_mapper.Map<IEnumerable<QuestionDto>>(result));
+            var result = await _questionOptionRepository.GetByQuestionIdAsync(questionId);
+            return Ok(_mapper.Map<IEnumerable<QuestionOptionDto>>(result));
         }
 
         /// <summary>
@@ -131,7 +131,7 @@ namespace API.Controllers
         [HttpPut("{questionOptionId}")]
         [ProducesResponseType((int)HttpStatusCode.NoContent)]
         [ProducesResponseType((int)HttpStatusCode.NotFound)]
-        public async Task<ActionResult> Update(Guid quizId, Guid questionId, Guid questionOptionId, [FromBody] UpdateQuestionRequest request)
+        public async Task<ActionResult> Update(Guid quizId, Guid questionId, Guid questionOptionId, [FromBody] UpdateQuestionOptionRequest request)
         {
             var quiz = await _quizRepository.GetByIdAsync(quizId);
             if (quiz == null)
@@ -151,6 +151,8 @@ namespace API.Controllers
             {
                 return NotFound($"Question option with {questionOptionId} no more exists");
             }
+            entityToUpdate.Text = request.Text;
+            entityToUpdate.IsAnswer = request.IsAnswer;
 
             await _questionOptionRepository.UpdateAsync(entityToUpdate);
 
