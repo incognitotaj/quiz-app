@@ -1,7 +1,9 @@
-using Application.Responses;
+using API.Errors;
+using API.Middlewares;
 using Application;
 using AutoWrapper;
 using Infrastructure;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerUI;
@@ -75,7 +77,28 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices();
 
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = actionContext =>
+    {
+        var erros = actionContext.ModelState
+            .Where(e => e.Value.Errors.Count > 0)
+            .SelectMany(x => x.Value.Errors)
+            .Select(x => x.ErrorMessage).ToArray();
+
+        var errorResponse = new ApiValidationErrorResponse
+        {
+            Errors = erros
+        };
+
+        return new BadRequestObjectResult(errorResponse);
+    };
+});
+
 var app = builder.Build();
+
+app.UseMiddleware<ExceptionMiddleware>();
+app.UseStatusCodePagesWithReExecute("/api/errors/{0}");
 
 using var scope = app.Services.CreateAsyncScope();
 var services = scope.ServiceProvider;
@@ -85,6 +108,8 @@ try
 {
 
     var context = services.GetRequiredService<DataContext>();
+
+    await context.Database.EnsureCreatedAsync();
     await context.Database.MigrateAsync();
 }
 catch (Exception ex)
@@ -93,17 +118,16 @@ catch (Exception ex)
     logger.LogError(ex.Message);
 }
 
-
 // Configure the HTTP request pipeline.
 //if (app.Environment.IsDevelopment())
 //{
-    app.UseSwagger();
-    app.UseSwaggerUI(options =>
-    {
-        options.SwaggerEndpoint("/swagger/v1/swagger.json", "Quiz API v1");
-        options.RoutePrefix = string.Empty;
-        options.DocExpansion(DocExpansion.None);
-    });
+app.UseSwagger();
+app.UseSwaggerUI(options =>
+{
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "Quiz API v1");
+    options.RoutePrefix = string.Empty;
+    options.DocExpansion(DocExpansion.None);
+});
 //}
 
 app.UseHttpsRedirection();
@@ -111,13 +135,5 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.MapControllers();
-
-app.UseApiResponseAndExceptionWrapper<MapApiResponse>(new AutoWrapperOptions
-{
-    IgnoreNullValue = false,
-    ShowApiVersion = true,
-    ShowStatusCode = true,
-    ShowIsErrorFlagForSuccessfulResponse = true,
-});
 
 app.Run();

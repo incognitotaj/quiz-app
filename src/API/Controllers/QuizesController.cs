@@ -1,6 +1,6 @@
-﻿using Application.Contracts.Persistence;
+﻿using API.Errors;
+using Application.Contracts.Persistence;
 using Application.Dtos;
-using Application.Exceptions;
 using AutoMapper;
 using Domain.Entities;
 using Domain.Requests;
@@ -28,11 +28,12 @@ namespace API.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet()]
-        [ProducesResponseType(typeof(IEnumerable<QuizDto>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(ApiResponse), (int)HttpStatusCode.OK)]
         public async Task<IActionResult> Get()
         {
             var result = await _quizRepository.GetAllAsync();
-            return Ok(_mapper.Map<IEnumerable<QuizDto>>(result));
+            return Ok(new ApiResponse(200, null, _mapper.Map<IEnumerable<QuizDto>>(result)));
+
         }
 
         /// <summary>
@@ -41,17 +42,17 @@ namespace API.Controllers
         /// <param name="quizId"></param>
         /// <returns></returns>
         [HttpGet("{quizId}")]
-        [ProducesResponseType(typeof(QuizDto), (int)HttpStatusCode.OK)]
-        [ProducesResponseType((int)HttpStatusCode.NotFound)]
+        [ProducesResponseType(typeof(ApiResponse), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(ApiResponse),(int)HttpStatusCode.NotFound)]
         public async Task<ActionResult<QuizDto>> GetById(Guid quizId)
         {
             var quiz = await _quizRepository.GetByIdAsync(quizId);
             if (quiz == null)
             {
-                return NotFound($"Quiz with {quizId} no more exists");
+                return NotFound(new ApiResponse(404));
             }
 
-            return Ok(_mapper.Map<QuizDto>(quiz));
+            return Ok(new ApiResponse(200, null, _mapper.Map<QuizDto>(quiz)));
         }
 
         /// <summary>
@@ -60,14 +61,14 @@ namespace API.Controllers
         /// <param name="request"></param>
         /// <returns></returns>
         [HttpPost()]
-        [ProducesResponseType((int)HttpStatusCode.Created)]
+        [ProducesResponseType(typeof(ApiResponse), (int)HttpStatusCode.Created)]
         public async Task<ActionResult<Guid>> Create([FromBody] CreateQuizRequest request)
         {
             var entity = _mapper.Map<Quiz>(request);
 
             var newEntity = await _quizRepository.AddAsync(entity);
 
-            return Ok(newEntity.Id);
+            return Created($"/api/quizes/{newEntity.Id}", new ApiResponse(201, null, _mapper.Map<QuizDto>(newEntity)));
         }
 
         /// <summary>
@@ -77,14 +78,14 @@ namespace API.Controllers
         /// <param name="request"></param>
         /// <returns></returns>
         [HttpPut("{quizId}")]
-        [ProducesResponseType((int)HttpStatusCode.NoContent)]
-        [ProducesResponseType((int)HttpStatusCode.NotFound)]
+        [ProducesResponseType(typeof(ApiResponse), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(ApiResponse), (int)HttpStatusCode.NotFound)]
         public async Task<ActionResult> Update(Guid quizId, [FromBody] UpdateQuizRequest request)
         {
             var entityToUpdate = await _quizRepository.GetByIdAsync(quizId);
             if (entityToUpdate == null)
             {
-                return NotFound($"Quiz with {quizId} no more exists");
+                return NotFound(new ApiResponse(404));
             }
 
             entityToUpdate.Title = request.Title;
@@ -92,7 +93,7 @@ namespace API.Controllers
 
             await _quizRepository.UpdateAsync(entityToUpdate);
 
-            return NoContent();
+            return Ok(new ApiResponse(204, null, _mapper.Map<QuizDto>(entityToUpdate)));
         }
 
         /// <summary>
@@ -101,18 +102,19 @@ namespace API.Controllers
         /// <param name="quizId"></param>
         /// <returns></returns>
         [HttpDelete("{quizId}")]
-        [ProducesResponseType((int)HttpStatusCode.NoContent)]
-        [ProducesResponseType((int)HttpStatusCode.NotFound)]
+        [ProducesResponseType(typeof(ApiResponse),(int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(ApiResponse), (int)HttpStatusCode.NotFound)]
         public async Task<ActionResult> Delete(Guid quizId)
         {
             var entityToDelete = await _quizRepository.GetByIdAsync(quizId);
             if (entityToDelete == null)
             {
-                return NotFound($"Quiz with {quizId} no more exists");
+                return NotFound(new ApiResponse(404));
             }
 
             await _quizRepository.DeleteAsync(entityToDelete);
-            return NoContent();
+            return Ok(new ApiResponse(204, null, null));
+
         }
     }
 }
